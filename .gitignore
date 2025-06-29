@@ -1,0 +1,7 @@
+models/
+*.pt
+*.mp4
+
+input/
+output/
+__pycache__/
