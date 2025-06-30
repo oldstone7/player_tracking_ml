@@ -1,62 +1,102 @@
-# Player Tracking ML Project
+# Player Re-identification & Tracking – Assessment Submission
 
-This project implements a multi-object tracking system for identifying and tracking individual players across video frames in sports footage.
+##  Project Goal
+The objective of this assessment was to perform **player re-identification and tracking** from a football video using a custom YOLO model (`best.pt`). The aim was to ensure each player retains a consistent ID throughout the video. The solution was built using Python, OpenCV, and PyTorch, leveraging GPU acceleration (CUDA) for faster performance.
 
-## Features
+---
 
-- **YOLO Detection**: Uses pre-trained YOLOv11 model for player detection
-- **Persistent ID Tracking**: Assigns unique, persistent IDs to each player
-- **GPU Acceleration**: Supports CUDA for faster processing
-- **Video Output**: Generates tracked video with bounding boxes and player IDs
+##  What I Tried
+
+### 1. **Centroid Tracker (Basic)**
+I started with a simple **Centroid Tracker**, which keeps track of object IDs by comparing the distance between detected player centroids across frames.  
+This method is:
+- Lightweight
+- Easy to implement
+- But fragile when players move quickly or occlude each other.
+
+### 2. **IoU-Based Tracker**
+Then, I attempted to integrate an **IoU (Intersection over Union)** tracker to improve stability. This compared the overlap between bounding boxes across frames to associate detections.  
+However:
+- It worked in some cases but still had ID switches when players overlapped or moved erratically.
+- Integration was messy and less reliable than expected.
+
+### 3. **Combining Centroid + IoU** *(Idea)*
+I briefly explored combining both approaches — using centroid distance for fallback when IoU failed — but I didn’t have enough time to refine this hybrid approach due to the deadline.
+
+### 4. **Deep SORT / Re-ID** *(The approach was in the branch `reid`, working one was in `main` branch)*
+Finally, I tried integrating **Deep SORT** for re-identification using embeddings. However, due to compatibility issues between YOLOv8’s tensor structure and Deep SORT’s expected input format, the implementation broke down.  
+Despite troubleshooting, the re-ID integration remained buggy and I couldn’t fix it before the deadline.
+
+---
+
+##  Final Working Solution
+
+I went back to a reliable and minimal approach:  
+- Uses YOLOv11 model (`best.pt`) to detect class `2` (players)
+- Calculates centroids of detected bounding boxes
+- Tracks objects based on proximity of centroids across frames
+- Draws bounding boxes and labels with unique IDs
+
+
+
+---
+## ⚡ CUDA Acceleration
+
+This project checks for a CUDA-enabled GPU and automatically runs on GPU if available. This significantly speeds up inference, making it suitable for real-time or near real-time applications. Run the below command to install your CUDA Toolkit to use NVIDIA drivers (takes around 2.8 gb but worth running)
+
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+
+## Requirements
+
+- Python 3.8+
+- CUDA-compatible GPU (highly recommended, for faster processing)
+- YOLO model file (`models/best.pt`)
+- Input video file (`input/15sec_input_720p.mp4`)
+
+## Installation
+
+```bash
+# Clone the repo
+git clone https://github.com/your_username/player_tracking_ml.git
+cd player_tracking_ml
+
+# Create virtual environment (optional but recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+## Run the Program
+
+```bash
+python main.py
+```
 
 ## Project Structure
 
 ```
 player_tracking_ml/
-├── main.py              # Main tracking logic
-├── tracker.py           # CentroidTracker implementation
-├── requirements.txt     # Python dependencies
-├── README.md           # This file
-├── models/             # Place your YOLO model (best.pt) here
-├── input/              # Place your input video (15sec_input_720p.mp4) here
-└── output/             # Output video will be saved here
+├── input/
+│   └── 15sec_input_720p.mp4
+├── models/
+│   └── best.pt
+├── output/
+│   └── tracked_output.mp4  # (generated after running)
+├── tracker.py
+├── main.py
+├── requirements.txt
+└── README.md
 ```
 
-## Setup Instructions
 
-### 1. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
+## Limitations
+- The tracking is not 100% accurate (some ID jumps or losses when players overlap).
+- No advanced re-identification logic (like Deep SORT embeddings).
+- Bounding box consistency can be shaky when players move fast or overlap.
 
-### 2. Prepare Files
-- Place your YOLO model file (`best.pt`) in the `models/` directory
-- Place your input video (`15sec_input_720p.mp4`) in the `input/` directory
+---
 
-### 3. Run the Tracking
-```bash
-python main.py
-```
-
-The processed video with player tracking will be saved as `output/tracked_output.mp4`.
-
-## How It Works
-
-1. **Detection**: YOLO model detects players in each frame
-2. **Tracking**: CentroidTracker assigns and maintains unique IDs for each player
-3. **Visualization**: Bounding boxes with persistent IDs are drawn on each frame
-4. **Output**: Final video with tracking information is saved
-
-## Technical Details
-
-- **Tracker**: Uses centroid-based tracking with distance matching
-- **ID Persistence**: Players maintain their IDs across frames and re-appearances
-- **GPU Support**: Automatically detects and uses CUDA if available
-- **Performance**: Optimized for real-time processing with GPU acceleration
-
-## Requirements
-
-- Python 3.8+
-- CUDA-compatible GPU (optional, for faster processing)
-- YOLO model file (`best.pt`)
-- Input video file (`15sec_input_720p.mp4`) 
+## Note
+Although I come from a web development background, this assessment helped me stretch into new ML territories. I used a combination of research, experimentation, and support from open-source resources and LLMs to build this.
